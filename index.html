@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Excel</title>
+</head>
+<body>
+    <h1>Generate and Download Excel</h1>
+    <button id="downloadExcel">Download Excel</button>
+
+    <script>
+        document.getElementById('downloadExcel').addEventListener('click', async () => {
+            // Sample data to send
+            const data = {
+                columns: ["ID", "Name", "Age", "Department", "Salary"],
+                rows: [
+                    [1, "John Doe", 28, "Engineering", 60000],
+                    [2, "Jane Smith", 34, "Marketing", 75000],
+                    [3, "Emily Davis", 40, "HR", 68000],
+                    [4, "Michael Brown", 25, "Finance", 52000],
+                    [5, "Chris Johnson", 30, "Engineering", 71000]
+                ],
+                sheetname: "EmployeeData",
+                filename: "employee_report"
+            };
+
+            // Call FastAPI endpoint
+            const response = await fetch('https://all-testing-apis.onrender.com/generate-excel/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                // Create a blob from the response
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a link element, set the URL and trigger a click to download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'employee_report.xlsx'; // Filename for the download
+                document.body.appendChild(a);
+                a.click();
+
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } else {
+                alert('Failed to generate Excel file.');
+            }
+        });
+    </script>
+</body>
+</html>
