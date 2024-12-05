@@ -87,7 +87,8 @@ def generate_mapping_report(data: Dict):
         i_row = []
         for column in source_column:
             j_column = f"{column[1]}.{column[2]}"
-            i_row.append(row[column[1]][column[2]])
+            i_row.append(row.get(column[1], {}).get(column[2], ""))
+            #i_row.append(row[column[1]][column[2]] if row[column[1]][column[2]] else "")
         ws.append(i_row)
     
     # Save the workbook to an in-memory buffer
