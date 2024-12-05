@@ -5,6 +5,7 @@ import io
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict
 
 app = FastAPI()
 
@@ -46,6 +47,55 @@ async def generate_excel(data: dict):
     buffer.seek(0)
 
     # Return the Excel file as a streaming response
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"}
+    )
+@app.post("/generate-mapping-report")
+def generate_mapping_report(data: Dict):
+    def get_legacy_header(source_column, index=0):
+        main_header = []
+        current = ""
+        for i in source_column:
+            header = i[index]
+            if not current == header:
+                current = header
+                main_header.append(header)
+            else:
+                main_header.append("")
+        return main_header
+    
+    # Create a new Workbook and sheet
+    wb = Workbook()
+    ws = wb.active
+    sheetname = data.get("sheetname", "Sheet1")
+    filename = data.get("filename", "report")
+    columns = data.get("columns", [])
+    rows = data.get("rows", [])
+    source_column = [(i["label"].split("-")[0], i["field"].split(".")[0], i["field"].split(".")[1]) for i in columns]
+
+    # Rename the active sheet
+    ws.title = sheetname
+
+    # Write the headers and rows
+    ws.append(get_legacy_header(source_column, 0))
+    ws.append(get_legacy_header(source_column, 1))
+    ws.append([i[2] for i in source_column])
+
+    for row in rows:
+        i_row = []
+        for column in source_column:
+            j_column = f"{column[1]}.{column[2]}"
+            i_row.append(row[column[1]][column[2]])
+        ws.append(i_row)
+    
+    # Save the workbook to an in-memory buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    # Return the Excel file as a StreamingResponse
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
