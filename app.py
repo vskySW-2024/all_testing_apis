@@ -99,7 +99,8 @@ def generate_mapping_report(data: Dict):
             cell.font = font
 
     blue_fill = PatternFill(start_color="1b75ab", end_color="1b75ab", fill_type="solid")  # Blue background
-    for row in ws[f"A1:{get_column_letter(len([x for x in source_column if x[0].lower() == "source"]))}3"]:  # Specify the range
+    source_num=get_column_letter(len([x for x in source_column if x[0].lower() == "source"]))
+    for row in ws[f"A1:{source_num}3"]:  # Specify the range
         for cell in row:
             cell.fill = blue_fill
 
