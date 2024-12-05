@@ -6,6 +6,8 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
+import pandas as pd
+from openpyxl.utils import get_column_letter
 
 app = FastAPI()
 
@@ -61,7 +63,7 @@ def generate_mapping_report(data: Dict):
             header = i[index]
             if not current == header:
                 current = header
-                main_header.append(header)
+                main_header.append(header.upper())
             else:
                 main_header.append("")
         return main_header
@@ -80,15 +82,32 @@ def generate_mapping_report(data: Dict):
 
     # Write the headers and rows
     ws.append(get_legacy_header(source_column, 0))
+    fill = PatternFill(start_color="3a6c97", end_color="3a6c97", fill_type="solid")
+    font = Font(bold=True, color="ffffff")
+    for cell in ws[1]:
+            cell.fill = fill
+            cell.font = font
+
     ws.append(get_legacy_header(source_column, 1))
-    ws.append([i[2] for i in source_column])
+    for cell in ws[2]:
+            cell.fill = fill
+            cell.font = font
+
+    ws.append([i[2].upper() for i in source_column])
+    for cell in ws[3]:
+            cell.fill = fill
+            cell.font = font
+
+    blue_fill = PatternFill(start_color="1b75ab", end_color="1b75ab", fill_type="solid")  # Blue background
+    for row in ws[f"A1:{get_column_letter(len([x for x in source_column if x[0].lower() == "source"]))}3"]:  # Specify the range
+        for cell in row:
+            cell.fill = blue_fill
 
     for row in rows:
         i_row = []
         for column in source_column:
             j_column = f"{column[1]}.{column[2]}"
             i_row.append(row.get(column[1], {}).get(column[2], ""))
-            #i_row.append(row[column[1]][column[2]] if row[column[1]][column[2]] else "")
         ws.append(i_row)
     
     # Save the workbook to an in-memory buffer
@@ -102,5 +121,6 @@ def generate_mapping_report(data: Dict):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"}
     )
+
 
 # Run the server with: uvicorn filename:app --reload
